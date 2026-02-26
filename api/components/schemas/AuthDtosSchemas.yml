@@ -1,0 +1,66 @@
+UserLevel:
+  type: string
+  description: User access tier used across the API.
+  enum: [admin, vip, regular]
+
+AccessLevel:
+  type: string
+  description: Minimum user level required to access an event.
+  enum: [regular, vip, admin]
+
+User:
+  type: object
+  additionalProperties: false
+  properties:
+    id:
+      type: string
+      examples: ["usr_123"]
+    email:
+      type: string
+      format: email
+      examples: ["user@example.com"]
+    level:
+      $ref: "../../EventPromoterAPI.yml#/components/schemas/UserLevel"
+    createdAt:
+      type: string
+      format: date-time
+  required: [id, email, level, createdAt]
+
+SignupRequest:
+  type: object
+  additionalProperties: false
+  properties:
+    email:
+      type: string
+      format: email
+    password:
+      type: string
+      format: password
+      minLength: 8
+    level:
+      $ref: "../../EventPromoterAPI.yml#/components/schemas/UserLevel"
+  required: [email, password, level]
+
+LoginRequest:
+  type: object
+  additionalProperties: false
+  properties:
+    email:
+      type: string
+      format: email
+    password:
+      type: string
+      format: password
+  required: [email, password]
+
+AuthResponse:
+  type: object
+  additionalProperties: false
+  properties:
+    token:
+      type: string
+      description: "Bearer token to be used as `Authorization: Bearer <token>`."
+      examples: ["<JWT_TOKEN>"]
+    user:
+      $ref: "../../EventPromoterAPI.yml#/components/schemas/User"
+  required: [token, user]

@@ -1,0 +1,148 @@
+EventModel:
+  type: object
+  additionalProperties: false
+  required:
+    - id
+    - title
+    - subtitle
+    - description
+    - isVIP
+    - hero
+    - date
+    - location
+    - organizer
+    - sessions
+    - registration
+    - layoutId
+  properties:
+    id:
+      type: string
+      format: uuid
+    title:
+      type: string
+    subtitle:
+      type: string
+    description:
+      type: string
+    isVIP:
+      type: boolean
+    hero:
+      $ref: "../../EventPromoterAPI.yml#/components/schemas/HeroModel"
+    date:
+      type: string
+      format: date
+    location:
+      $ref: "../../EventPromoterAPI.yml#/components/schemas/LocationModel"
+    organizer:
+      $ref: "../../EventPromoterAPI.yml#/components/schemas/OrganizerModel"
+    sessions:
+      type: array
+      items:
+      $ref: "../../EventPromoterAPI.yml#/components/schemas/SessionModel"
+    registration:
+      $ref: "../../EventPromoterAPI.yml#/components/schemas/RegistrationModel"
+    layoutId:
+      type: string
+      format: uuid
+
+HeroModel:
+  type: object
+  additionalProperties: false
+  required:
+    - image
+    - cta
+  properties:
+    image:
+      type: string
+    cta:
+      type: string
+
+LocationModel:
+  type: object
+  additionalProperties: false
+  required:
+    - city
+    - venue
+    - address
+  properties:
+    city:
+      type: string
+    venue:
+      type: string
+    address:
+      type: string
+
+OrganizerModel:
+  type: object
+  additionalProperties: false
+  required:
+    - id
+    - name
+    - img
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    img:
+      type: string
+
+SessionModel:
+  type: object
+  additionalProperties: false
+  required:
+    - id
+    - title
+    - from
+    - to
+    - speakerId
+    - description
+    - level
+    - track
+    - room
+  properties:
+    id:
+      type: string
+      format: uuid
+    title:
+      type: string
+    from:
+      type: string
+      format: date-time
+    to:
+      type: string
+      format: date-time
+    speakerId:
+      type: string
+      format: uuid
+    description:
+      type: string
+    level:
+      type: string
+    track:
+      type: string
+    room:
+      type: string
+
+RegistrationModel:
+  type: object
+  additionalProperties: false
+  required:
+    - openDate
+    - closeDate
+    - fee
+    - earlyBirdDiscount
+  properties:
+    openDate:
+      type: string
+      format: date
+    closeDate:
+      type: string
+      format: date
+    fee:
+      type: number
+      format: double
+    earlyBirdDiscount:
+      type: number
+      format: double

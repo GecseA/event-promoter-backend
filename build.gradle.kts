@@ -40,6 +40,7 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json")
     implementation("io.ktor:ktor-server-sessions")
     implementation("io.ktor:ktor-server-cio")
+    implementation("io.ktor:ktor-server-html-builder")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-config-yaml")
     testImplementation("io.ktor:ktor-server-test-host")
