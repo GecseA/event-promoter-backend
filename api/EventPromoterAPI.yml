@@ -1,0 +1,532 @@
+openapi: 3.1.0
+info:
+  title: Template-Driven Events API
+  version: 1.0.0
+  description: >
+    OpenAPI spec for a template-driven structure featuring authentication (login/signup),
+    user levels (admin/vip/regular), event listing, event access, and event registration.
+servers:
+  - url: https://api.example.com
+    description: Production
+  - url: https://staging-api.example.com
+    description: Staging
+
+tags:
+  - name: Auth
+  - name: Events
+  - name: Registrations
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Sign up a new user
+      description: Creates a user with a chosen level (admin/vip/regular). In practice, setting admin may be restricted by policy.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupRequest"
+            examples:
+              regularUser:
+                value:
+                  email: user@example.com
+                  password: "<PASSWORD>"
+                  level: regular
+              vipUser:
+                value:
+                  email: vip@example.com
+                  password: "<PASSWORD>"
+                  level: vip
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in
+      description: Returns an access token (JWT-style) and user profile info.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            examples:
+              login:
+                value:
+                  email: user@example.com
+                  password: "<PASSWORD>"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events:
+    get:
+      tags: [Events]
+      summary: List events
+      description: Lists events visible to the current user level. Supports basic filtering and pagination.
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: startsAfter
+          in: query
+          required: false
+          description: Only return events starting at/after this time (inclusive).
+          schema:
+            type: string
+            format: date-time
+        - name: startsBefore
+          in: query
+          required: false
+          description: Only return events starting at/before this time (inclusive).
+          schema:
+            type: string
+            format: date-time
+        - name: access
+          in: query
+          required: false
+          description: Filter by access level.
+          schema:
+            $ref: "#/components/schemas/AccessLevel"
+      responses:
+        "200":
+          description: Event list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedEventsResponse"
+        "401":
+          description: Missing/invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events/{eventId}:
+    get:
+      tags: [Events]
+      summary: Get event details
+      description: Returns event details; may be restricted based on user level and event access level.
+      parameters:
+        - $ref: "#/components/parameters/EventIdParam"
+      responses:
+        "200":
+          description: Event details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "401":
+          description: Missing/invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not allowed for this user level
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events/{eventId}/access:
+    get:
+      tags: [Events]
+      summary: Check access to an event
+      description: >
+        Returns whether the current user can access the event. Useful for UI gating in a template-driven flow.
+      parameters:
+        - $ref: "#/components/parameters/EventIdParam"
+      responses:
+        "200":
+          description: Access decision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventAccessResponse"
+              examples:
+                allowed:
+                  value:
+                    eventId: "evt_123"
+                    allowed: true
+                    reason: null
+                denied:
+                  value:
+                    eventId: "evt_999"
+                    allowed: false
+                    reason: "Requires VIP or Admin level."
+        "401":
+          description: Missing/invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events/{eventId}/registrations:
+    post:
+      tags: [Registrations]
+      summary: Register for an event
+      description: Creates a registration for the current user, if allowed by access rules and capacity.
+      parameters:
+        - $ref: "#/components/parameters/EventIdParam"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventRegistrationRequest"
+            examples:
+              standard:
+                value:
+                  notes: "Looking forward to it."
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Registration"
+        "401":
+          description: Missing/invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not allowed (user level / rule-based)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already registered or capacity conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      tags: [Registrations]
+      summary: List registrations for an event (admin only)
+      description: Returns registrations for an event. Intended for admin dashboards.
+      parameters:
+        - $ref: "#/components/parameters/EventIdParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: Registration list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedRegistrationsResponse"
+        "401":
+          description: Missing/invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin level required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    EventIdParam:
+      name: eventId
+      in: path
+      required: true
+      description: Event identifier.
+      schema:
+        type: string
+        examples: ["evt_123"]
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: 1-based page number.
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: pageSize
+      in: query
+      required: false
+      description: Number of items per page.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 20
+
+  schemas:
+    UserLevel:
+      type: string
+      description: User access tier used across the API.
+      enum: [admin, vip, regular]
+
+    AccessLevel:
+      type: string
+      description: Minimum user level required to access an event.
+      enum: [regular, vip, admin]
+
+    User:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          examples: ["usr_123"]
+        email:
+          type: string
+          format: email
+          examples: ["user@example.com"]
+        level:
+          $ref: "#/components/schemas/UserLevel"
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, email, level, createdAt]
+
+    SignupRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        level:
+          $ref: "#/components/schemas/UserLevel"
+      required: [email, password, level]
+
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+      required: [email, password]
+
+    AuthResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        token:
+          type: string
+          description: "Bearer token to be used as `Authorization: Bearer <token>`."
+          examples: ["<JWT_TOKEN>"]
+        user:
+          $ref: "#/components/schemas/User"
+      required: [token, user]
+
+    Event:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          examples: ["evt_123"]
+        title:
+          type: string
+          examples: ["Kotlin Meetup"]
+        description:
+          type: string
+          nullable: true
+          examples: ["Talks and networking."]
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+          nullable: true
+        location:
+          type: string
+          nullable: true
+          examples: ["Online"]
+        accessLevel:
+          $ref: "#/components/schemas/AccessLevel"
+        capacity:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Maximum number of registrations. If null, unlimited.
+        remainingCapacity:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Convenience field; server-calculated.
+        isRegistrationOpen:
+          type: boolean
+      required: [id, title, startsAt, accessLevel, isRegistrationOpen]
+
+    EventAccessResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        eventId:
+          type: string
+        allowed:
+          type: boolean
+        reason:
+          type: string
+          nullable: true
+          description: Human-readable explanation when access is denied.
+      required: [eventId, allowed, reason]
+
+    EventRegistrationRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+      required: []
+
+    Registration:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          examples: ["reg_123"]
+        eventId:
+          type: string
+          examples: ["evt_123"]
+        userId:
+          type: string
+          examples: ["usr_123"]
+        status:
+          type: string
+          enum: [registered, cancelled, waitlisted]
+        createdAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          nullable: true
+      required: [id, eventId, userId, status, createdAt]
+
+    PagedEventsResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+      required: [page, pageSize, total, items]
+
+    PagedRegistrationsResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Registration"
+      required: [page, pageSize, total, items]
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          properties:
+            code:
+              type: string
+              examples: ["VALIDATION_ERROR", "UNAUTHORIZED", "FORBIDDEN", "NOT_FOUND", "CONFLICT"]
+            message:
+              type: string
+              examples: ["Something went wrong."]
+            details:
+              type: string
+              nullable: true
+              description: Optional machine-readable details (e.g., field errors).
+          required: [code, message, details]
+      required: [error]

@@ -1,5 +1,9 @@
 package hu.gecsevar
 
+import hu.gecsevar.plugins.configureHTTP
+import hu.gecsevar.plugins.configureRouting
+import hu.gecsevar.plugins.configureSecurity
+import hu.gecsevar.plugins.configureSerialization
 import io.ktor.server.application.*
 
 fun main(args: Array<String>) {
