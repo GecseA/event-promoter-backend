@@ -1,0 +1,76 @@
+/events/{eventId}/registrations:
+  post:
+    tags: [Registrations]
+    summary: Register for an event
+    description: Creates a registration for the current user, if allowed by access rules and capacity.
+    parameters:
+      - $ref: "../EventPromoterAPI.yml#/components/parameters/EventIdParam"
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: "../EventPromoterAPI.yml#/components/schemas/EventRegistrationRequest"
+          examples:
+            standard:
+              value:
+                notes: "Looking forward to it."
+    responses:
+      "201":
+        description: Registered
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/Registration"
+      "401":
+        description: Missing/invalid token
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+      "403":
+        description: Not allowed (user level / rule-based)
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+      "409":
+        description: Already registered or capacity conflict
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+      "404":
+        description: Event not found
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+
+  get:
+    tags: [Registrations]
+    summary: List registrations for an event (admin only)
+    description: Returns registrations for an event. Intended for admin dashboards.
+    parameters:
+      - $ref: "../EventPromoterAPI.yml#/components/parameters/EventIdParam"
+      - $ref: "../EventPromoterAPI.yml#/components/parameters/PageParam"
+      - $ref: "../EventPromoterAPI.yml#/components/parameters/PageSizeParam"
+    responses:
+      "200":
+        description: Registration list
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/PagedRegistrationsResponse"
+      "401":
+        description: Missing/invalid token
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+      "403":
+        description: Admin level required
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"

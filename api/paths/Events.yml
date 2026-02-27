@@ -1,0 +1,114 @@
+/events:
+  get:
+    tags: [Events]
+    summary: List events
+    description: Lists events visible to the current user level. Supports basic filtering and pagination.
+    parameters:
+      - $ref: "../EventPromoterAPI.yml#/components/parameters/PageParam"
+      - $ref: "../EventPromoterAPI.yml#/components/parameters/PageSizeParam"
+      - name: startsAfter
+        in: query
+        required: false
+        description: Only return events starting at/after this time (inclusive).
+        schema:
+          type: string
+          format: date-time
+      - name: startsBefore
+        in: query
+        required: false
+        description: Only return events starting at/before this time (inclusive).
+        schema:
+          type: string
+          format: date-time
+      - name: access
+        in: query
+        required: false
+        description: Filter by access level.
+        schema:
+          $ref: "../EventPromoterAPI.yml#/components/schemas/AccessLevel"
+    responses:
+      "200":
+        description: Event list
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/PagedEventsResponse"
+      "401":
+        description: Missing/invalid token
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+
+/events/{eventId}:
+  get:
+    tags: [Events]
+    summary: Get event details
+    description: Returns event details; may be restricted based on user level and event access level.
+    parameters:
+      - $ref: "../EventPromoterAPI.yml#/components/parameters/EventIdParam"
+    responses:
+      "200":
+        description: Event details
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/Event"
+      "401":
+        description: Missing/invalid token
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+      "403":
+        description: Not allowed for this user level
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+      "404":
+        description: Event not found
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+
+/events/{eventId}/access:
+  get:
+    tags: [Events]
+    summary: Check access to an event
+    description: >
+      Returns whether the current user can access the event. Useful for UI gating in a template-driven flow.
+    parameters:
+      - $ref: "../EventPromoterAPI.yml#/components/parameters/EventIdParam"
+    responses:
+      "200":
+        description: Access decision
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/EventAccessResponse"
+            examples:
+              allowed:
+                value:
+                  eventId: "evt_123"
+                  allowed: true
+                  reason: null
+              denied:
+                value:
+                  eventId: "evt_999"
+                  allowed: false
+                  reason: "Requires VIP or Admin level."
+      "401":
+        description: Missing/invalid token
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+      "404":
+        description: Event not found
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+

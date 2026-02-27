@@ -60,7 +60,7 @@ AuthResponse:
     token:
       type: string
       description: "Bearer token to be used as `Authorization: Bearer <token>`."
-      examples: ["<JWT_TOKEN>"]
+      example: [ "<JWT_TOKEN>" ]
     user:
-      $ref: "../../EventPromoterAPI.yml#/components/schemas/User"
-  required: [token, user]
+      $ref: "../../../EventPromoterAPI.yml#/components/schemas/User"
+  required: [ token, user ]

@@ -21,269 +21,18 @@ security:
 
 paths:
   /auth/signup:
-    post:
-      tags: [Auth]
-      summary: Sign up a new user
-      description: Creates a user with a chosen level (admin/vip/regular). In practice, setting admin may be restricted by policy.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SignupRequest"
-            examples:
-              regularUser:
-                value:
-                  email: user@example.com
-                  password: "<PASSWORD>"
-                  level: regular
-              vipUser:
-                value:
-                  email: vip@example.com
-                  password: "<PASSWORD>"
-                  level: vip
-      responses:
-        "201":
-          description: User created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthResponse"
-        "409":
-          description: Email already exists
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+    $ref: "./paths/Auth.yml#/~1auth~1signup"
   /auth/login:
-    post:
-      tags: [Auth]
-      summary: Log in
-      description: Returns an access token (JWT-style) and user profile info.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/LoginRequest"
-            examples:
-              login:
-                value:
-                  email: user@example.com
-                  password: "<PASSWORD>"
-      responses:
-        "200":
-          description: Logged in
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthResponse"
-        "401":
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+    $ref: "./paths/Auth.yml#/~1auth~1login"
 
   /events:
-    get:
-      tags: [Events]
-      summary: List events
-      description: Lists events visible to the current user level. Supports basic filtering and pagination.
-      parameters:
-        - $ref: "#/components/parameters/PageParam"
-        - $ref: "#/components/parameters/PageSizeParam"
-        - name: startsAfter
-          in: query
-          required: false
-          description: Only return events starting at/after this time (inclusive).
-          schema:
-            type: string
-            format: date-time
-        - name: startsBefore
-          in: query
-          required: false
-          description: Only return events starting at/before this time (inclusive).
-          schema:
-            type: string
-            format: date-time
-        - name: access
-          in: query
-          required: false
-          description: Filter by access level.
-          schema:
-            $ref: "#/components/schemas/AccessLevel"
-      responses:
-        "200":
-          description: Event list
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PagedEventsResponse"
-        "401":
-          description: Missing/invalid token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+    $ref: "./paths/Events.yml#/~1events"
   /events/{eventId}:
-    get:
-      tags: [Events]
-      summary: Get event details
-      description: Returns event details; may be restricted based on user level and event access level.
-      parameters:
-        - $ref: "#/components/parameters/EventIdParam"
-      responses:
-        "200":
-          description: Event details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Event"
-        "401":
-          description: Missing/invalid token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Not allowed for this user level
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Event not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+    $ref: "./paths/Events.yml#/~1events~1{eventId}"
   /events/{eventId}/access:
-    get:
-      tags: [Events]
-      summary: Check access to an event
-      description: >
-        Returns whether the current user can access the event. Useful for UI gating in a template-driven flow.
-      parameters:
-        - $ref: "#/components/parameters/EventIdParam"
-      responses:
-        "200":
-          description: Access decision
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EventAccessResponse"
-              examples:
-                allowed:
-                  value:
-                    eventId: "evt_123"
-                    allowed: true
-                    reason: null
-                denied:
-                  value:
-                    eventId: "evt_999"
-                    allowed: false
-                    reason: "Requires VIP or Admin level."
-        "401":
-          description: Missing/invalid token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Event not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+    $ref: "./paths/Events.yml#/~1events~1{eventId}~1access"
   /events/{eventId}/registrations:
-    post:
-      tags: [Registrations]
-      summary: Register for an event
-      description: Creates a registration for the current user, if allowed by access rules and capacity.
-      parameters:
-        - $ref: "#/components/parameters/EventIdParam"
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/EventRegistrationRequest"
-            examples:
-              standard:
-                value:
-                  notes: "Looking forward to it."
-      responses:
-        "201":
-          description: Registered
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Registration"
-        "401":
-          description: Missing/invalid token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Not allowed (user level / rule-based)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "409":
-          description: Already registered or capacity conflict
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Event not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-    get:
-      tags: [Registrations]
-      summary: List registrations for an event (admin only)
-      description: Returns registrations for an event. Intended for admin dashboards.
-      parameters:
-        - $ref: "#/components/parameters/EventIdParam"
-        - $ref: "#/components/parameters/PageParam"
-        - $ref: "#/components/parameters/PageSizeParam"
-      responses:
-        "200":
-          description: Registration list
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PagedRegistrationsResponse"
-        "401":
-          description: Missing/invalid token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Admin level required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+    $ref: "./paths/Registrations.yml#/~1events~1{eventId}~1registrations"
 
 components:
   securitySchemes:
@@ -300,7 +49,7 @@ components:
       description: Event identifier.
       schema:
         type: string
-        examples: ["evt_123"]
+        example: ["evt_123"]
     PageParam:
       name: page
       in: query
@@ -332,8 +81,6 @@ components:
       $ref: "./components/schemas/AuthDtosSchemas.yml#/SignupRequest"
     LoginRequest:
       $ref: "./components/schemas/AuthDtosSchemas.yml#/LoginRequest"
-    AuthResponse:
-      $ref: "./components/schemas/AuthDtosSchemas.yml#/AuthResponse"
 
     EventModel:
       $ref: "./components/schemas/EventDtosSchemas.yml#/EventModel"
@@ -358,13 +105,14 @@ components:
           properties:
             code:
               type: string
-              examples: ["VALIDATION_ERROR", "UNAUTHORIZED", "FORBIDDEN", "NOT_FOUND", "CONFLICT"]
+              example: ["VALIDATION_ERROR", "UNAUTHORIZED", "FORBIDDEN", "NOT_FOUND", "CONFLICT"]
             message:
               type: string
-              examples: ["Something went wrong."]
+              example: ["Something went wrong."]
             details:
               type: string
               nullable: true
               description: Optional machine-readable details (e.g., field errors).
           required: [code, message, details]
       required: [error]
+

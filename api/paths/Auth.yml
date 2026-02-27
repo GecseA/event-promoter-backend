@@ -1,0 +1,73 @@
+/auth/signup:
+  post:
+    tags: [Auth]
+    summary: Sign up a new user
+    description: Creates a user with a chosen level (admin/vip/regular). In practice, setting admin may be restricted by policy.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../EventPromoterAPI.yml#/components/schemas/SignupRequest"
+          examples:
+            regularUser:
+              value:
+                email: user@example.com
+                password: "<PASSWORD>"
+                level: regular
+            vipUser:
+              value:
+                email: vip@example.com
+                password: "<PASSWORD>"
+                level: vip
+    responses:
+      "201":
+        description: User created
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/AuthDtosSchemas.yml#/AuthResponse"
+      "409":
+        description: Email already exists
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+      "422":
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
+
+/auth/login:
+  post:
+    tags: [Auth]
+    summary: Log in
+    description: Returns an access token (JWT-style) and user profile info.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../EventPromoterAPI.yml#/components/schemas/LoginRequest"
+          examples:
+            login:
+              value:
+                email: user@example.com
+                password: "<PASSWORD>"
+    responses:
+      "200":
+        description: Logged in
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/AuthDtosSchemas.yml#/AuthResponse"
+      "401":
+        description: Invalid credentials
+        content:
+          application/json:
+            schema:
+              $ref: "../EventPromoterAPI.yml#/components/schemas/ErrorResponse"
